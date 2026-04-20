@@ -1,78 +1,78 @@
+// 🔥 CONFIG FIREBASE (coloque a sua)
+const firebaseConfig = {
+  apiKey: "SUA_KEY",
+  authDomain: "SEU_DOMINIO",
+  projectId: "SEU_ID"
+};
+
+firebase.initializeApp(firebaseConfig);
+
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+// =========================
+// VARIÁVEIS
+// =========================
 let jogadorId = null;
 let nomeJogador = "";
 let tipoJogador = "";
 let dinheiro = 0;
 
-/* =========================
-   🔐 REGISTRAR
-========================= */
+let ultimoTempoFusao = 0;
+const TEMPO_FUSAO = 60000;
+
+// =========================
+// REGISTRAR
+// =========================
 async function registrar() {
-  const email = document.getElementById("email").value;
-  const senha = document.getElementById("senha").value;
-  const nome = document.getElementById("nome").value;
-  const tipo = document.getElementById("tipo").value;
+  const email = emailInput();
+  const senha = senhaInput();
+  const nome = nomeInput();
+  const tipo = tipoInput();
 
-  try {
-    const userCred = await auth.createUserWithEmailAndPassword(email, senha);
-    const user = userCred.user;
+  const user = await auth.createUserWithEmailAndPassword(email, senha);
+  jogadorId = user.user.uid;
 
-    jogadorId = user.uid;
-    nomeJogador = nome;
-    tipoJogador = tipo;
-    dinheiro = 1000;
+  nomeJogador = nome;
+  tipoJogador = tipo;
+  dinheiro = 1000;
 
-    await db.collection("cooperativas").doc(jogadorId).set({
-      nome,
-      tipo,
-      dinheiro,
-      online: true,
-      criadoEm: Date.now()
-    });
+  await db.collection("cooperativas").doc(jogadorId).set({
+    nome, tipo, dinheiro,
+    online: true,
+    criadoEm: Date.now(),
+    ultimaFusao: 0
+  });
 
-    entrarNoJogo();
-
-  } catch (e) {
-    alert("Erro: " + e.message);
-  }
+  entrarNoJogo();
 }
 
-/* =========================
-   🔓 LOGIN
-========================= */
+// =========================
+// LOGIN
+// =========================
 async function login() {
-  const email = document.getElementById("email").value;
-  const senha = document.getElementById("senha").value;
+  const user = await auth.signInWithEmailAndPassword(emailInput(), senhaInput());
 
-  try {
-    const userCred = await auth.signInWithEmailAndPassword(email, senha);
-    const user = userCred.user;
+  jogadorId = user.user.uid;
 
-    jogadorId = user.uid;
+  const doc = await db.collection("cooperativas").doc(jogadorId).get();
+  const data = doc.data();
 
-    const doc = await db.collection("cooperativas")
-      .doc(jogadorId)
-      .get();
+  nomeJogador = data.nome;
+  tipoJogador = data.tipo;
+  dinheiro = data.dinheiro;
+  ultimoTempoFusao = data.ultimaFusao || 0;
 
-    const data = doc.data();
+  await db.collection("cooperativas").doc(jogadorId).update({
+    online: true
+  });
 
-    nomeJogador = data.nome;
-    tipoJogador = data.tipo;
-    dinheiro = data.dinheiro;
-
-    await db.collection("cooperativas").doc(jogadorId).update({
-      online: true
-    });
-
-    entrarNoJogo();
-
-  } catch (e) {
-    alert("Erro: " + e.message);
-  }
+  entrarNoJogo();
 }
 
-/* =========================
-   🚪 ENTRAR NO JOGO
-========================= */
+// =========================
+// UI
+// =========================
 function entrarNoJogo() {
   document.getElementById("login").style.display = "none";
   document.getElementById("jogo").style.display = "block";
@@ -88,99 +88,82 @@ function entrarNoJogo() {
   iniciarEventos();
 }
 
-/* =========================
-   🔄 ATUALIZAR TELA
-========================= */
 function atualizarTela() {
-  document.getElementById("titulo").innerText =
-    nomeJogador + " (" + tipoJogador + ")";
-  document.getElementById("dinheiro").innerText =
-    "💰 R$ " + dinheiro;
+  titulo().innerText = `${nomeJogador} (${tipoJogador})`;
+  dinheiroUI().innerText = `💰 R$ ${dinheiro}`;
 }
 
-/* =========================
-   🔴 TEMPO REAL
-========================= */
+// =========================
+// TEMPO REAL
+// =========================
 function escutarCooperativas() {
-  db.collection("cooperativas").onSnapshot((snapshot) => {
-
+  db.collection("cooperativas").onSnapshot((snap) => {
     let html = "";
 
-    snapshot.forEach((doc) => {
-      const coop = doc.data();
-
+    snap.forEach(doc => {
+      const c = doc.data();
       if (doc.id !== jogadorId) {
         html += `
-          <div class="card">
-            <b>${coop.nome}</b><br>
-            ${coop.tipo}<br>
-            💰 ${coop.dinheiro}
-            <br>
-            <button onclick="fundir('${doc.id}')">Fusão</button>
-          </div>
-        `;
+        <div class="card">
+          <b>${c.nome}</b><br>
+          ${c.tipo}<br>
+          💰 ${c.dinheiro}
+          <button onclick="fundir('${doc.id}')">Fusão</button>
+        </div>`;
       }
     });
 
-    document.getElementById("lista").innerHTML = html;
+    lista().innerHTML = html;
   });
 }
 
-/* =========================
-   🟢 ONLINE
-========================= */
 function escutarOnline() {
-  db.collection("cooperativas").onSnapshot((snapshot) => {
-
+  db.collection("cooperativas").onSnapshot((snap) => {
     let html = "";
-
-    snapshot.forEach((doc) => {
-      const coop = doc.data();
-
-      if (coop.online) {
-        html += `<div>🟢 ${coop.nome}</div>`;
-      }
+    snap.forEach(doc => {
+      const c = doc.data();
+      if (c.online) html += `<div>🟢 ${c.nome}</div>`;
     });
-
-    document.getElementById("online").innerHTML = html;
+    online().innerHTML = html;
   });
 }
 
-/* =========================
-   🏆 RANKING
-========================= */
 function escutarRanking() {
   db.collection("cooperativas")
     .orderBy("dinheiro", "desc")
-    .onSnapshot((snapshot) => {
+    .onSnapshot((snap) => {
 
       let html = "";
       let pos = 1;
 
-      snapshot.forEach((doc) => {
-        const coop = doc.data();
-        html += `<div>#${pos} - ${coop.nome} 💰 ${coop.dinheiro}</div>`;
+      snap.forEach(doc => {
+        const c = doc.data();
+        html += `<div>#${pos} - ${c.nome} 💰 ${c.dinheiro}</div>`;
         pos++;
       });
 
-      document.getElementById("ranking").innerHTML = html;
+      ranking().innerHTML = html;
     });
 }
 
-/* =========================
-   🤝 FUSÃO
-========================= */
+// =========================
+// FUSÃO COM COOLDOWN
+// =========================
 async function fundir(idOutro) {
+
+  const agora = Date.now();
+
+  if (agora - ultimoTempoFusao < TEMPO_FUSAO) {
+    const restante = Math.ceil((TEMPO_FUSAO - (agora - ultimoTempoFusao)) / 1000);
+    alert(`⏳ Aguarde ${restante}s`);
+    return;
+  }
+
   const novoNome = prompt("Nome da nova cooperativa:");
   if (!novoNome) return;
 
-  // pega dados da outra cooperativa
-  const docOutro = await db.collection("cooperativas").doc(idOutro).get();
-  const outra = docOutro.data();
+  const outra = (await db.collection("cooperativas").doc(idOutro).get()).data();
 
-  let valorBase = 0;
-
-  // VALOR BASE POR TIPO (sua coop)
   const valores = {
     "Transporte": 400,
     "Saúde": 600,
@@ -191,209 +174,46 @@ async function fundir(idOutro) {
     "Trabalho e Serviços": 500
   };
 
-  valorBase = valores[tipoJogador] || 400;
+  let ganho = valores[tipoJogador] || 400;
 
-  // 🎯 BÔNUS ou PENALIDADE dependendo da combinação
-  let bonus = 0;
-
-  if (tipoJogador === outra.tipo) {
-    bonus += 300; // mesma área → mais forte
-  }
-
-  // SINERGIAS (faz sentido na vida real)
-  if (
-    (tipoJogador === "Transporte" && outra.tipo === "Infraestrutura") ||
-    (tipoJogador === "Infraestrutura" && outra.tipo === "Transporte")
-  ) {
-    bonus += 250;
-  }
-
-  if (
-    (tipoJogador === "Saúde" && outra.tipo === "Financeira") ||
-    (tipoJogador === "Financeira" && outra.tipo === "Saúde")
-  ) {
-    bonus += 200;
-  }
-
-  if (
-    (tipoJogador === "Agropecuário" && outra.tipo === "Consumo") ||
-    (tipoJogador === "Consumo" && outra.tipo === "Agropecuário")
-  ) {
-    bonus += 200;
-  }
-
-  // CONFLITO (menos eficiente)
-  if (
-    (tipoJogador === "Financeira" && outra.tipo === "Agropecuário")
-  ) {
-    bonus -= 150;
-  }
-
-  const ganho = valorBase + bonus;
+  if (tipoJogador === outra.tipo) ganho += 300;
 
   dinheiro += ganho;
+  ultimoTempoFusao = agora;
 
   await db.collection("cooperativas").doc(jogadorId).update({
     nome: novoNome,
-    dinheiro: dinheiro
+    dinheiro,
+    ultimaFusao: agora
   });
 
-  // registra evento
   db.collection("eventos").add({
-    texto: `🤝 ${nomeJogador} fundiu com ${outra.nome} (+${ganho})`,
+    texto: `🤝 ${nomeJogador} fundiu com ${outra.nome}`,
     tempo: Date.now()
   });
 
   atualizarTela();
 }
 
-/* =========================
-   🔔 NOTIFICAÇÃO
-========================= */
-function notificarEntrada(nome) {
-  const msg = `🚀 ${nome} entrou no jogo!`;
-
-  db.collection("eventos").add({
-    texto: msg,
-    tempo: Date.now()
-  });
-}
-
-/* =========================
-   📢 EVENTOS
-========================= */
-function escutarEventos() {
-  db.collection("eventos")
-    .orderBy("tempo", "desc")
-    .limit(5)
-    .onSnapshot((snapshot) => {
-
-      let html = "";
-
-      snapshot.forEach((doc) => {
-        html += `<div>${doc.data().texto}</div>`;
-      });
-
-      document.getElementById("eventos").innerHTML = html;
-    });
-}
-
-/* =========================
-   🎲 EVENTOS ALEATÓRIOS
-========================= */
+// =========================
+// EVENTOS
+// =========================
 function iniciarEventos() {
   setInterval(async () => {
 
-    let eventos = [];
-
-    if (tipoJogador === "Transporte") {
-      eventos = [
-        { texto: "⛽ Alta no diesel impactou custos!", valor: -350 },
-        { texto: "🚌 Licitação pública vencida!", valor: 600 },
-        { texto: "🚧 Obras causaram atraso nas rotas!", valor: -200 },
-        { texto: "📈 Aumento na demanda urbana!", valor: 350 },
-        { texto: "🚨 Fiscalização gerou multa!", valor: -300 },
-        { texto: "🔧 Renovação da frota com financiamento!", valor: -150 },
-        { texto: "🎫 Integração com bilhete único aumentou receita!", valor: 400 }
-      ];
-    }
-
-    else if (tipoJogador === "Saúde") {
-      eventos = [
-        { texto: "🦠 Surto aumentou atendimentos!", valor: 500 },
-        { texto: "💊 Alta no preço de medicamentos!", valor: -350 },
-        { texto: "🏥 Parceria com plano de saúde!", valor: 450 },
-        { texto: "⚖️ Processo judicial inesperado!", valor: -500 },
-        { texto: "👨‍⚕️ Contratação de especialistas!", valor: -200 },
-        { texto: "📊 Aumento na confiança dos pacientes!", valor: 300 },
-        { texto: "🧪 Investimento em tecnologia médica!", valor: -250 }
-      ];
-    }
-
-    else if (tipoJogador === "Agropecuário") {
-      eventos = [
-        { texto: "🌧️ Excesso de chuva prejudicou safra!", valor: -400 },
-        { texto: "🌞 Clima favorável aumentou produção!", valor: 500 },
-        { texto: "🚜 Investimento em maquinário!", valor: -300 },
-        { texto: "📦 Exportações cresceram!", valor: 600 },
-        { texto: "🐛 Praga atingiu plantação!", valor: -350 },
-        { texto: "💰 Valorização das commodities!", valor: 450 },
-        { texto: "🚢 Problema logístico atrasou entregas!", valor: -250 }
-      ];
-    }
-
-    else if (tipoJogador === "Financeira") {
-      eventos = [
-        { texto: "📉 Aumento da inadimplência!", valor: -500 },
-        { texto: "📈 Taxa de juros favoreceu ganhos!", valor: 450 },
-        { texto: "💳 Crescimento na base de clientes!", valor: 400 },
-        { texto: "⚠️ Crise econômica nacional!", valor: -600 },
-        { texto: "📊 Investimentos tiveram alta rentabilidade!", valor: 550 },
-        { texto: "🏦 Nova regulamentação do Banco Central!", valor: -300 },
-        { texto: "💰 Liberação de crédito incentivada!", valor: 350 }
-      ];
-    }
-
-    else if (tipoJogador === "Consumo") {
-      eventos = [
-        { texto: "🛒 Alta demanda por produtos!", valor: 400 },
-        { texto: "📦 Problema com fornecedor!", valor: -300 },
-        { texto: "💸 Inflação elevou custos!", valor: -350 },
-        { texto: "🎉 Campanha promocional de sucesso!", valor: 500 },
-        { texto: "📉 Queda no consumo!", valor: -250 },
-        { texto: "🤝 Parceria com novos fornecedores!", valor: 350 },
-        { texto: "🚚 Atraso na logística!", valor: -200 }
-      ];
-    }
-
-    else if (tipoJogador === "Infraestrutura") {
-      eventos = [
-        { texto: "⚡ Expansão da rede elétrica!", valor: 600 },
-        { texto: "🌩️ Tempestade danificou estrutura!", valor: -500 },
-        { texto: "📡 Melhoria tecnológica aumentou eficiência!", valor: 450 },
-        { texto: "🔧 Manutenção emergencial!", valor: -300 },
-        { texto: "📈 Aumento de usuários!", valor: 400 },
-        { texto: "🏗️ Investimento em expansão!", valor: -350 },
-        { texto: "⚖️ Nova regulação do governo!", valor: -250 }
-      ];
-    }
-
-    else if (tipoJogador === "Trabalho e Serviços") {
-      eventos = [
-        { texto: "📈 Novo contrato empresarial!", valor: 500 },
-        { texto: "❌ Perda de cliente importante!", valor: -400 },
-        { texto: "👥 Aumento da demanda por serviços!", valor: 350 },
-        { texto: "⚠️ Rotatividade de trabalhadores!", valor: -250 },
-        { texto: "📊 Expansão do portfólio!", valor: 400 },
-        { texto: "💼 Crise no setor afetou contratos!", valor: -350 },
-        { texto: "🤝 Parceria estratégica!", valor: 450 }
-      ];
-    }
-
-    // EVENTOS GLOBAIS (AFETAM TODOS)
-    const eventosGlobais = [
-      { texto: "🌎 Crise econômica global!", valor: -400 },
-      { texto: "📈 Crescimento econômico nacional!", valor: 400 },
-      { texto: "🏛️ Nova política pública de incentivo!", valor: 300 },
-      { texto: "⚠️ Instabilidade política!", valor: -300 }
+    const eventos = [
+      { texto: "📉 Crise econômica", valor: -200 },
+      { texto: "📈 Boom de mercado", valor: 300 }
     ];
 
-    // 20% de chance de evento global
-    let evento;
-    if (Math.random() < 0.2) {
-      evento = eventosGlobais[Math.floor(Math.random() * eventosGlobais.length)];
-    } else {
-      evento = eventos[Math.floor(Math.random() * eventos.length)];
-    }
+    const e = eventos[Math.random() * eventos.length | 0];
 
-    dinheiro += evento.valor;
+    dinheiro += e.valor;
 
-    await db.collection("cooperativas").doc(jogadorId).update({
-      dinheiro: dinheiro
-    });
+    await db.collection("cooperativas").doc(jogadorId).update({ dinheiro });
 
     db.collection("eventos").add({
-      texto: `${nomeJogador} (${tipoJogador}): ${evento.texto}`,
+      texto: `${nomeJogador}: ${e.texto}`,
       tempo: Date.now()
     });
 
@@ -402,9 +222,47 @@ function iniciarEventos() {
   }, 10000);
 }
 
-/* =========================
-   🚨 FICAR OFFLINE AO SAIR
-========================= */
+// =========================
+// NOTIFICAÇÃO
+// =========================
+function notificarEntrada(nome) {
+  db.collection("eventos").add({
+    texto: `🚀 ${nome} entrou`,
+    tempo: Date.now()
+  });
+}
+
+function escutarEventos() {
+  db.collection("eventos")
+    .orderBy("tempo", "desc")
+    .limit(5)
+    .onSnapshot((snap) => {
+
+      let html = "";
+      snap.forEach(doc => html += `<div>${doc.data().texto}</div>`);
+
+      eventosUI().innerHTML = html;
+    });
+}
+
+// =========================
+// HELPERS
+// =========================
+const emailInput = () => document.getElementById("email").value;
+const senhaInput = () => document.getElementById("senha").value;
+const nomeInput = () => document.getElementById("nome").value;
+const tipoInput = () => document.getElementById("tipo").value;
+
+const titulo = () => document.getElementById("titulo");
+const dinheiroUI = () => document.getElementById("dinheiro");
+const lista = () => document.getElementById("lista");
+const online = () => document.getElementById("online");
+const ranking = () => document.getElementById("ranking");
+const eventosUI = () => document.getElementById("eventos");
+
+// =========================
+// OFFLINE
+// =========================
 window.addEventListener("beforeunload", async () => {
   if (jogadorId) {
     await db.collection("cooperativas").doc(jogadorId).update({
