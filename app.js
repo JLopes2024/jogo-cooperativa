@@ -221,13 +221,107 @@ function escutarEventos() {
 function iniciarEventos() {
   setInterval(async () => {
 
-    const eventos = [
-      { texto: "📉 Crise econômica!", valor: -200 },
-      { texto: "📈 Boom de mercado!", valor: 300 },
-      { texto: "💡 Inovação trouxe lucro!", valor: 200 }
+    let eventos = [];
+
+    if (tipoJogador === "Transporte") {
+      eventos = [
+        { texto: "⛽ Alta no diesel impactou custos!", valor: -350 },
+        { texto: "🚌 Licitação pública vencida!", valor: 600 },
+        { texto: "🚧 Obras causaram atraso nas rotas!", valor: -200 },
+        { texto: "📈 Aumento na demanda urbana!", valor: 350 },
+        { texto: "🚨 Fiscalização gerou multa!", valor: -300 },
+        { texto: "🔧 Renovação da frota com financiamento!", valor: -150 },
+        { texto: "🎫 Integração com bilhete único aumentou receita!", valor: 400 }
+      ];
+    }
+
+    else if (tipoJogador === "Saúde") {
+      eventos = [
+        { texto: "🦠 Surto aumentou atendimentos!", valor: 500 },
+        { texto: "💊 Alta no preço de medicamentos!", valor: -350 },
+        { texto: "🏥 Parceria com plano de saúde!", valor: 450 },
+        { texto: "⚖️ Processo judicial inesperado!", valor: -500 },
+        { texto: "👨‍⚕️ Contratação de especialistas!", valor: -200 },
+        { texto: "📊 Aumento na confiança dos pacientes!", valor: 300 },
+        { texto: "🧪 Investimento em tecnologia médica!", valor: -250 }
+      ];
+    }
+
+    else if (tipoJogador === "Agropecuário") {
+      eventos = [
+        { texto: "🌧️ Excesso de chuva prejudicou safra!", valor: -400 },
+        { texto: "🌞 Clima favorável aumentou produção!", valor: 500 },
+        { texto: "🚜 Investimento em maquinário!", valor: -300 },
+        { texto: "📦 Exportações cresceram!", valor: 600 },
+        { texto: "🐛 Praga atingiu plantação!", valor: -350 },
+        { texto: "💰 Valorização das commodities!", valor: 450 },
+        { texto: "🚢 Problema logístico atrasou entregas!", valor: -250 }
+      ];
+    }
+
+    else if (tipoJogador === "Financeira") {
+      eventos = [
+        { texto: "📉 Aumento da inadimplência!", valor: -500 },
+        { texto: "📈 Taxa de juros favoreceu ganhos!", valor: 450 },
+        { texto: "💳 Crescimento na base de clientes!", valor: 400 },
+        { texto: "⚠️ Crise econômica nacional!", valor: -600 },
+        { texto: "📊 Investimentos tiveram alta rentabilidade!", valor: 550 },
+        { texto: "🏦 Nova regulamentação do Banco Central!", valor: -300 },
+        { texto: "💰 Liberação de crédito incentivada!", valor: 350 }
+      ];
+    }
+
+    else if (tipoJogador === "Consumo") {
+      eventos = [
+        { texto: "🛒 Alta demanda por produtos!", valor: 400 },
+        { texto: "📦 Problema com fornecedor!", valor: -300 },
+        { texto: "💸 Inflação elevou custos!", valor: -350 },
+        { texto: "🎉 Campanha promocional de sucesso!", valor: 500 },
+        { texto: "📉 Queda no consumo!", valor: -250 },
+        { texto: "🤝 Parceria com novos fornecedores!", valor: 350 },
+        { texto: "🚚 Atraso na logística!", valor: -200 }
+      ];
+    }
+
+    else if (tipoJogador === "Infraestrutura") {
+      eventos = [
+        { texto: "⚡ Expansão da rede elétrica!", valor: 600 },
+        { texto: "🌩️ Tempestade danificou estrutura!", valor: -500 },
+        { texto: "📡 Melhoria tecnológica aumentou eficiência!", valor: 450 },
+        { texto: "🔧 Manutenção emergencial!", valor: -300 },
+        { texto: "📈 Aumento de usuários!", valor: 400 },
+        { texto: "🏗️ Investimento em expansão!", valor: -350 },
+        { texto: "⚖️ Nova regulação do governo!", valor: -250 }
+      ];
+    }
+
+    else if (tipoJogador === "Trabalho e Serviços") {
+      eventos = [
+        { texto: "📈 Novo contrato empresarial!", valor: 500 },
+        { texto: "❌ Perda de cliente importante!", valor: -400 },
+        { texto: "👥 Aumento da demanda por serviços!", valor: 350 },
+        { texto: "⚠️ Rotatividade de trabalhadores!", valor: -250 },
+        { texto: "📊 Expansão do portfólio!", valor: 400 },
+        { texto: "💼 Crise no setor afetou contratos!", valor: -350 },
+        { texto: "🤝 Parceria estratégica!", valor: 450 }
+      ];
+    }
+
+    // EVENTOS GLOBAIS (AFETAM TODOS)
+    const eventosGlobais = [
+      { texto: "🌎 Crise econômica global!", valor: -400 },
+      { texto: "📈 Crescimento econômico nacional!", valor: 400 },
+      { texto: "🏛️ Nova política pública de incentivo!", valor: 300 },
+      { texto: "⚠️ Instabilidade política!", valor: -300 }
     ];
 
-    const evento = eventos[Math.floor(Math.random() * eventos.length)];
+    // 20% de chance de evento global
+    let evento;
+    if (Math.random() < 0.2) {
+      evento = eventosGlobais[Math.floor(Math.random() * eventosGlobais.length)];
+    } else {
+      evento = eventos[Math.floor(Math.random() * eventos.length)];
+    }
 
     dinheiro += evento.valor;
 
@@ -236,7 +330,7 @@ function iniciarEventos() {
     });
 
     db.collection("eventos").add({
-      texto: `${nomeJogador}: ${evento.texto}`,
+      texto: `${nomeJogador} (${tipoJogador}): ${evento.texto}`,
       tempo: Date.now()
     });
 
