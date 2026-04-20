@@ -29,11 +29,34 @@
     <h2 id="titulo"></h2>
     <p id="dinheiro"></p>
 
-    <button onclick="listarCooperativas()">Ver cooperativas</button>
+    <h3>🟢 Jogadores Online</h3>
+    <div id="online"></div>
 
+    <h3>🏆 Ranking</h3>
+    <div id="ranking"></div>
+
+    <h3>🤝 Cooperativas</h3>
     <div id="lista"></div>
+
+    <h3>📢 Eventos</h3>
+    <div id="eventos"></div>
   </div>
 
-  <script type="module" src="app.js"></script>
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "SUA_API_KEY",
+      authDomain: "SEU_AUTH",
+      projectId: "SEU_PROJECT_ID"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+  </script>
+
+  <script src="app.js"></script>
 </body>
 </html>
