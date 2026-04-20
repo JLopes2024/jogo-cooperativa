@@ -3,27 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <title>Jogo das Cooperativas</title>
-
-  <!-- MOBILE -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
   <link rel="stylesheet" href="style.css">
-
-  <!-- Firebase (necessário pro app.js) -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 </head>
-
 <body>
 
-  <!-- LOGIN -->
   <div id="login">
     <h2>Crie sua cooperativa</h2>
 
     <input type="text" id="nome" placeholder="Seu nome">
-    <input type="email" id="email" placeholder="Email">
-    <input type="password" id="senha" placeholder="Senha">
 
     <select id="tipo">
       <option>Transporte</option>
@@ -35,12 +22,9 @@
       <option>Trabalho e Serviços</option>
     </select>
 
-    <!-- IMPORTANTE: mantém compatível com seu JS -->
-    <button onclick="registrar()">Registrar</button>
-    <button onclick="login()">Login</button>
+    <button onclick="criarCooperativa()">Entrar</button>
   </div>
 
-  <!-- JOGO -->
   <div id="jogo" style="display:none;">
     <h2 id="titulo"></h2>
     <p id="dinheiro"></p>
@@ -48,20 +32,8 @@
     <button onclick="listarCooperativas()">Ver cooperativas</button>
 
     <div id="lista"></div>
-
-    <!-- NOVOS BLOCOS (não quebram nada) -->
-    <h3>🟢 Online</h3>
-    <div id="online"></div>
-
-    <h3>🏆 Ranking</h3>
-    <div id="ranking"></div>
-
-    <h3>📢 Eventos</h3>
-    <div id="eventos"></div>
   </div>
 
-  <!-- SEU JS -->
   <script type="module" src="app.js"></script>
-
 </body>
 </html>

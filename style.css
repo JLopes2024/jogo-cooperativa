@@ -1,58 +1,14 @@
 body {
   font-family: Arial;
-  margin: 0;
-  background: #0f172a;
-  color: white;
-}
-
-.container {
-  padding: 16px;
-  max-width: 500px;
-  margin: auto;
-}
-
-h2, h3 {
   text-align: center;
+  background: #f4f4f4;
+}
+
+div {
+  margin-top: 30px;
 }
 
 input, select, button {
-  width: 100%;
-  margin: 6px 0;
-  padding: 12px;
-  border-radius: 8px;
-  border: none;
-}
-
-button {
-  background: #22c55e;
-  color: white;
-  font-weight: bold;
-}
-
-.card {
-  background: #1e293b;
-  padding: 12px;
-  margin: 8px 0;
-  border-radius: 10px;
-}
-
-#dinheiro {
-  font-size: 22px;
-  text-align: center;
-  margin-bottom: 10px;
-}
-
-#online div {
-  font-size: 14px;
-}
-
-#ranking div {
-  font-size: 14px;
-}
-
-#eventos {
-  font-size: 13px;
-  background: #020617;
   padding: 10px;
-  border-radius: 8px;
+  margin: 5px;
 }
