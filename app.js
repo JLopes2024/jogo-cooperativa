@@ -1,4 +1,7 @@
-import { db, collection, addDoc, getDocs, updateDoc, doc } from "./firebase.js";
+import {
+  db, collection, addDoc, getDocs,
+  updateDoc, doc, getDoc
+} from "./firebase.js";
 
 let jogadorId = null;
 let nomeJogador = "";
@@ -9,8 +12,7 @@ let dinheiro = 0;
 window.criarCooperativa = async function () {
   nomeJogador = document.getElementById("nome").value;
   tipoJogador = document.getElementById("tipo").value;
-
-  dinheiro = 1000; // inicial
+  dinheiro = 1000;
 
   const docRef = await addDoc(collection(db, "cooperativas"), {
     nome: nomeJogador,
@@ -24,14 +26,20 @@ window.criarCooperativa = async function () {
   document.getElementById("jogo").style.display = "block";
 
   atualizarTela();
+  eventoAleatorio();
 };
 
 // Atualizar tela
 function atualizarTela() {
   document.getElementById("titulo").innerText =
-    nomeJogador + " (" + tipoJogador + ")";
+    `${nomeJogador} (${tipoJogador})`;
+
   document.getElementById("dinheiro").innerText =
-    "💰 Dinheiro: R$ " + dinheiro;
+    `💰 Dinheiro: R$ ${dinheiro}`;
+
+  if (dinheiro >= 5000) {
+    alert("🏆 Você venceu! Cooperativa de sucesso!");
+  }
 }
 
 // Listar cooperativas
@@ -47,7 +55,9 @@ window.listarCooperativas = async function () {
       html += `
         <div>
           <b>${coop.nome}</b> (${coop.tipo})
-          <button onclick="fundir('${docSnap.id}')">Fusão</button>
+          <button onclick="enviarPedido('${docSnap.id}')">
+            Pedir Fusão
+          </button>
         </div>
       `;
     }
@@ -56,14 +66,52 @@ window.listarCooperativas = async function () {
   document.getElementById("lista").innerHTML = html;
 };
 
-// Função de fusão
-window.fundir = async function (idOutro) {
-  const novoNome = prompt("Nome da nova cooperativa:");
+// Enviar pedido de fusão
+window.enviarPedido = async function (idDestino) {
+  await addDoc(collection(db, "pedidos"), {
+    de: jogadorId,
+    para: idDestino
+  });
 
+  alert("📩 Pedido enviado!");
+};
+
+// Ver pedidos recebidos
+window.verPedidos = async function () {
+  const querySnapshot = await getDocs(collection(db, "pedidos"));
+
+  let html = "<h3>Pedidos recebidos</h3>";
+
+  querySnapshot.forEach((docSnap) => {
+    const pedido = docSnap.data();
+
+    if (pedido.para === jogadorId) {
+      html += `
+        <div>
+          Pedido de fusão
+          <button onclick="responderPedido('${docSnap.id}', true)">Aceitar</button>
+          <button onclick="responderPedido('${docSnap.id}', false)">Recusar</button>
+        </div>
+      `;
+    }
+  });
+
+  document.getElementById("lista").innerHTML = html;
+};
+
+// Responder pedido
+window.responderPedido = async function (pedidoId, aceito) {
+  if (!aceito) {
+    alert("❌ Fusão recusada");
+    return;
+  }
+
+  const novoNome = prompt("Nome da nova cooperativa:");
   if (!novoNome) return;
 
-  // bônus secreto 💰
-  dinheiro += 500;
+  const bonus = calcularBonus(tipoJogador);
+
+  dinheiro += bonus;
 
   const ref = doc(db, "cooperativas", jogadorId);
 
@@ -72,7 +120,38 @@ window.fundir = async function (idOutro) {
     dinheiro: dinheiro
   });
 
-  alert("Fusão realizada! Você ganhou bônus secreto!");
+  alert(`✅ Fusão realizada! +R$ ${bonus}`);
 
   atualizarTela();
 };
+
+// Lógica de bônus
+function calcularBonus(tipo) {
+  const mapa = {
+    "Agropecuário": 800,
+    "Transporte": 700,
+    "Saúde": 600,
+    "Financeira": 900,
+    "Consumo": 500,
+    "Infraestrutura": 750,
+    "Trabalho e Serviços": 650
+  };
+
+  return mapa[tipo] || 300;
+}
+
+// Eventos aleatórios
+function eventoAleatorio() {
+  const eventos = [
+    { msg: "📉 Crise econômica", valor: -200 },
+    { msg: "📈 Incentivo do governo", valor: 300 },
+    { msg: "🤝 Novo contrato", valor: 400 }
+  ];
+
+  const evento = eventos[Math.floor(Math.random() * eventos.length)];
+
+  dinheiro += evento.valor;
+  alert(`${evento.msg} (${evento.valor})`);
+
+  atualizarTela();
+}
