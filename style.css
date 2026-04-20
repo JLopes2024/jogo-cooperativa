@@ -1,27 +1,132 @@
+/* RESET */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* BASE */
 body {
-  font-family: Arial;
+  font-family: Arial, sans-serif;
+  background: #f2f4f8;
+  color: #333;
+}
+
+/* CONTAINER */
+#jogo {
+  max-width: 500px;
+  margin: auto;
+  padding: 15px;
+}
+
+/* HEADER */
+#titulo {
+  font-size: 22px;
+  font-weight: bold;
   text-align: center;
-  background: #f4f4f4;
 }
 
+#dinheiro {
+  text-align: center;
+  font-size: 18px;
+  margin: 8px 0 20px;
+}
+
+/* SEÇÕES */
 h3 {
-  margin-top: 20px;
+  margin: 20px 0 10px;
+  font-size: 16px;
+  color: #555;
 }
 
-div {
-  margin: 10px;
-}
-
+/* CARDS */
 .card {
   background: white;
-  padding: 10px;
-  margin: 5px auto;
-  width: 250px;
-  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 10px;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
 }
 
+/* TEXTO */
+.card b {
+  font-size: 16px;
+}
+
+/* BOTÕES */
 button {
-  padding: 8px;
-  margin-top: 5px;
+  width: 100%;
+  margin-top: 8px;
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  background: #4CAF50;
+  color: white;
+  font-weight: bold;
   cursor: pointer;
+}
+
+button:hover {
+  opacity: 0.9;
+}
+
+/* ONLINE */
+#online div {
+  background: #e8f5e9;
+  padding: 6px 10px;
+  border-radius: 20px;
+  display: inline-block;
+  margin: 3px;
+  font-size: 13px;
+}
+
+/* RANKING */
+#ranking div {
+  background: #fff8e1;
+  padding: 8px;
+  border-radius: 8px;
+  margin-bottom: 5px;
+  font-size: 14px;
+}
+
+/* EVENTOS */
+#eventos div {
+  background: #e3f2fd;
+  padding: 8px;
+  border-radius: 8px;
+  margin-bottom: 5px;
+  font-size: 13px;
+}
+
+/* LOGIN */
+#login {
+  max-width: 400px;
+  margin: 60px auto;
+  padding: 20px;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+#login input,
+#login select {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+/* RESPONSIVO (desktop melhora layout) */
+@media (min-width: 768px) {
+
+  #jogo {
+    max-width: 900px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
 }
