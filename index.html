@@ -5,23 +5,62 @@
   <title>Cooperativas Game</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <link rel="stylesheet" href="style.css">
-
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+  <style>
+    body {
+      font-family: Arial;
+      margin: 0;
+      background: #0f172a;
+      color: white;
+    }
+
+    .container {
+      padding: 16px;
+      max-width: 500px;
+      margin: auto;
+    }
+
+    input, select, button {
+      width: 100%;
+      margin: 6px 0;
+      padding: 12px;
+      border-radius: 8px;
+      border: none;
+    }
+
+    button {
+      background: #22c55e;
+      color: white;
+      font-weight: bold;
+    }
+
+    .card {
+      background: #1e293b;
+      padding: 10px;
+      margin: 8px 0;
+      border-radius: 8px;
+    }
+
+    #dinheiro {
+      font-size: 20px;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+  </style>
 </head>
 
 <body>
 
-<!-- LOGIN -->
 <div id="login" class="container">
   <h2>Entrar no jogo</h2>
 
-  <input id="nome" placeholder="Nome"><br>
-  <input id="email" placeholder="Email"><br>
-  <input id="senha" type="password" placeholder="Senha"><br>
+  <input id="nome" placeholder="Nome (registro)">
+  <input id="email" placeholder="Email">
+  <input id="senha" type="password" placeholder="Senha">
 
   <select id="tipo">
     <option>Transporte</option>
@@ -37,9 +76,7 @@
   <button onclick="login()">Login</button>
 </div>
 
-<!-- JOGO -->
 <div id="jogo" class="container" style="display:none;">
-
   <h2 id="titulo"></h2>
   <div id="dinheiro"></div>
 
@@ -54,10 +91,253 @@
 
   <h3>📢 Eventos</h3>
   <div id="eventos"></div>
-
 </div>
 
-<script src="script.js"></script>
+<script>
+/* ================= FIREBASE ================= */
+  const firebaseConfig = {
+    apiKey: "AIzaSyCnNJX7Y3CNxXak9SnftTBcXV3hkj4g1ag",
+    authDomain: "jogo-cooperativas.firebaseapp.com",
+    projectId: "jogo-cooperativas",
+    storageBucket: "jogo-cooperativas.firebasestorage.app",
+    messagingSenderId: "641682053842",
+    appId: "1:641682053842:web:a9de8c738ac7d7bed62b0b"
+  };
+
+firebase.initializeApp(firebaseConfig);
+
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+/* ================= VARIÁVEIS ================= */
+let jogadorId = null;
+let nomeJogador = "";
+let tipoJogador = "";
+let dinheiro = 0;
+
+let ultimoTempoFusao = 0;
+const TEMPO_FUSAO = 60000;
+
+/* ================= REGISTRAR ================= */
+async function registrar() {
+  const user = await auth.createUserWithEmailAndPassword(email(), senha());
+
+  jogadorId = user.user.uid;
+  nomeJogador = nome();
+  tipoJogador = tipo();
+  dinheiro = 1000;
+
+  await db.collection("cooperativas").doc(jogadorId).set({
+    nome: nomeJogador,
+    tipo: tipoJogador,
+    dinheiro,
+    online: true,
+    ultimaFusao: 0
+  });
+
+  entrarNoJogo();
+}
+
+/* ================= LOGIN ================= */
+async function login() {
+  const user = await auth.signInWithEmailAndPassword(email(), senha());
+
+  jogadorId = user.user.uid;
+
+  const doc = await db.collection("cooperativas").doc(jogadorId).get();
+  const data = doc.data();
+
+  nomeJogador = data.nome;
+  tipoJogador = data.tipo;
+  dinheiro = data.dinheiro;
+  ultimoTempoFusao = data.ultimaFusao || 0;
+
+  await db.collection("cooperativas").doc(jogadorId).update({
+    online: true
+  });
+
+  entrarNoJogo();
+}
+
+/* ================= ENTRAR ================= */
+function entrarNoJogo() {
+  document.getElementById("login").style.display = "none";
+  document.getElementById("jogo").style.display = "block";
+
+  atualizarTela();
+
+  escutarCooperativas();
+  escutarOnline();
+  escutarRanking();
+  escutarEventos();
+
+  notificarEntrada();
+  iniciarEventos();
+}
+
+/* ================= UI ================= */
+function atualizarTela() {
+  document.getElementById("titulo").innerText =
+    nomeJogador + " (" + tipoJogador + ")";
+
+  document.getElementById("dinheiro").innerText =
+    "💰 R$ " + dinheiro;
+}
+
+/* ================= TEMPO REAL ================= */
+function escutarCooperativas() {
+  db.collection("cooperativas").onSnapshot((snap) => {
+    let html = "";
+
+    snap.forEach(doc => {
+      const c = doc.data();
+
+      if (doc.id !== jogadorId) {
+        html += `
+          <div class="card">
+            <b>${c.nome}</b><br>
+            ${c.tipo}<br>
+            💰 ${c.dinheiro}
+            <br>
+            <button onclick="fundir('${doc.id}')">Fusão</button>
+          </div>
+        `;
+      }
+    });
+
+    document.getElementById("lista").innerHTML = html;
+  });
+}
+
+function escutarOnline() {
+  db.collection("cooperativas").onSnapshot((snap) => {
+    let html = "";
+
+    snap.forEach(doc => {
+      const c = doc.data();
+      if (c.online) html += `<div>🟢 ${c.nome}</div>`;
+    });
+
+    document.getElementById("online").innerHTML = html;
+  });
+}
+
+function escutarRanking() {
+  db.collection("cooperativas")
+    .orderBy("dinheiro", "desc")
+    .onSnapshot((snap) => {
+
+      let html = "";
+      let pos = 1;
+
+      snap.forEach(doc => {
+        const c = doc.data();
+        html += `<div>#${pos} - ${c.nome} 💰 ${c.dinheiro}</div>`;
+        pos++;
+      });
+
+      document.getElementById("ranking").innerHTML = html;
+    });
+}
+
+/* ================= FUSÃO ================= */
+async function fundir(idOutro) {
+  const agora = Date.now();
+
+  if (agora - ultimoTempoFusao < TEMPO_FUSAO) {
+    const restante = Math.ceil((TEMPO_FUSAO - (agora - ultimoTempoFusao)) / 1000);
+    alert("⏳ Aguarde " + restante + "s");
+    return;
+  }
+
+  const nova = prompt("Nome da nova cooperativa:");
+  if (!nova) return;
+
+  const outra = (await db.collection("cooperativas").doc(idOutro).get()).data();
+
+  let ganho = 400;
+  if (tipoJogador === outra.tipo) ganho += 300;
+
+  dinheiro += ganho;
+  ultimoTempoFusao = agora;
+
+  await db.collection("cooperativas").doc(jogadorId).update({
+    nome: nova,
+    dinheiro,
+    ultimaFusao: agora
+  });
+
+  db.collection("eventos").add({
+    texto: `🤝 ${nomeJogador} fundiu com ${outra.nome}`,
+    tempo: Date.now()
+  });
+
+  atualizarTela();
+}
+
+/* ================= EVENTOS ================= */
+function iniciarEventos() {
+  setInterval(async () => {
+    const lista = [
+      { texto: "📉 Crise", valor: -200 },
+      { texto: "📈 Crescimento", valor: 300 }
+    ];
+
+    const e = lista[Math.random() * lista.length | 0];
+
+    dinheiro += e.valor;
+
+    await db.collection("cooperativas").doc(jogadorId).update({ dinheiro });
+
+    db.collection("eventos").add({
+      texto: nomeJogador + ": " + e.texto,
+      tempo: Date.now()
+    });
+
+    atualizarTela();
+
+  }, 10000);
+}
+
+/* ================= EVENTOS UI ================= */
+function escutarEventos() {
+  db.collection("eventos")
+    .orderBy("tempo", "desc")
+    .limit(5)
+    .onSnapshot((snap) => {
+
+      let html = "";
+      snap.forEach(doc => {
+        html += `<div>${doc.data().texto}</div>`;
+      });
+
+      document.getElementById("eventos").innerHTML = html;
+    });
+}
+
+/* ================= NOTIF ================= */
+function notificarEntrada() {
+  db.collection("eventos").add({
+    texto: "🚀 " + nomeJogador + " entrou",
+    tempo: Date.now()
+  });
+}
+
+/* ================= HELPERS ================= */
+const email = () => document.getElementById("email").value;
+const senha = () => document.getElementById("senha").value;
+const nome = () => document.getElementById("nome").value;
+const tipo = () => document.getElementById("tipo").value;
+
+/* ================= OFFLINE ================= */
+window.addEventListener("beforeunload", async () => {
+  if (jogadorId) {
+    await db.collection("cooperativas").doc(jogadorId).update({
+      online: false
+    });
+  }
+});
+</script>
 
 </body>
 </html>
