@@ -1,9 +1,12 @@
 // 🔥 CONFIG FIREBASE (coloque a sua)
-const firebaseConfig = {
-  apiKey: "SUA_KEY",
-  authDomain: "SEU_DOMINIO",
-  projectId: "SEU_ID"
-};
+  const firebaseConfig = {
+    apiKey: "AIzaSyCnNJX7Y3CNxXak9SnftTBcXV3hkj4g1ag",
+    authDomain: "jogo-cooperativas.firebaseapp.com",
+    projectId: "jogo-cooperativas",
+    storageBucket: "jogo-cooperativas.firebasestorage.app",
+    messagingSenderId: "641682053842",
+    appId: "1:641682053842:web:a9de8c738ac7d7bed62b0b"
+  };
 
 firebase.initializeApp(firebaseConfig);
 
