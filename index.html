@@ -2,72 +2,62 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
-  <title>Jogo das Cooperativas</title>
+  <title>Cooperativas Game</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <link rel="stylesheet" href="style.css">
-</head>
-<body>
-
-  <!-- LOGIN -->
-  <div id="login">
-    <h2>Entrar / Criar conta</h2>
-
-    <input type="email" id="email" placeholder="Email">
-    <input type="password" id="senha" placeholder="Senha">
-
-    <input type="text" id="nome" placeholder="Nome da cooperativa">
-
-    <select id="tipo">
-      <option>Transporte</option>
-      <option>Saúde</option>
-      <option>Agropecuário</option>
-      <option>Financeira</option>
-      <option>Consumo</option>
-      <option>Infraestrutura</option>
-      <option>Trabalho e Serviços</option>
-    </select>
-
-    <button onclick="registrar()">Criar conta</button>
-    <button onclick="login()">Entrar</button>
-  </div>
-
-  <!-- JOGO -->
-  <div id="jogo" style="display:none;">
-    <h2 id="titulo"></h2>
-    <p id="dinheiro"></p>
-
-    <h3>🟢 Jogadores Online</h3>
-    <div id="online"></div>
-
-    <h3>🏆 Ranking</h3>
-    <div id="ranking"></div>
-
-    <h3>🤝 Cooperativas</h3>
-    <div id="lista"></div>
-
-    <h3>📢 Eventos</h3>
-    <div id="eventos"></div>
-  </div>
 
   <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+</head>
 
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyCnNJX7Y3CNxXak9SnftTBcXV3hkj4g1ag",
-      authDomain: "jogo-cooperativas.firebaseapp.com",
-      projectId: "jogo-cooperativas",
-      storageBucket: "jogo-cooperativas.firebasestorage.app",
-      messagingSenderId: "641682053842",
-      appId: "1:641682053842:web:a9de8c738ac7d7bed62b0b"
-    };
+<body>
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-    const auth = firebase.auth();
-  </script>
+<!-- LOGIN -->
+<div id="login" class="container">
+  <h2>Entrar no jogo</h2>
 
-  <script src="app.js"></script>
+  <input id="nome" placeholder="Nome"><br>
+  <input id="email" placeholder="Email"><br>
+  <input id="senha" type="password" placeholder="Senha"><br>
+
+  <select id="tipo">
+    <option>Transporte</option>
+    <option>Saúde</option>
+    <option>Agropecuário</option>
+    <option>Financeira</option>
+    <option>Consumo</option>
+    <option>Infraestrutura</option>
+    <option>Trabalho e Serviços</option>
+  </select>
+
+  <button onclick="registrar()">Registrar</button>
+  <button onclick="login()">Login</button>
+</div>
+
+<!-- JOGO -->
+<div id="jogo" class="container" style="display:none;">
+
+  <h2 id="titulo"></h2>
+  <div id="dinheiro"></div>
+
+  <h3>🤝 Cooperativas</h3>
+  <div id="lista"></div>
+
+  <h3>🟢 Online</h3>
+  <div id="online"></div>
+
+  <h3>🏆 Ranking</h3>
+  <div id="ranking"></div>
+
+  <h3>📢 Eventos</h3>
+  <div id="eventos"></div>
+
+</div>
+
+<script src="script.js"></script>
+
 </body>
 </html>
