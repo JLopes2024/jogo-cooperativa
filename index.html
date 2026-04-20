@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Jogo das Cooperativas</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div id="login">
+    <h2>Crie sua cooperativa</h2>
+
+    <input type="text" id="nome" placeholder="Seu nome">
+
+    <select id="tipo">
+      <option>Transporte</option>
+      <option>Saúde</option>
+      <option>Agropecuário</option>
+      <option>Financeira</option>
+      <option>Consumo</option>
+      <option>Infraestrutura</option>
+      <option>Trabalho e Serviços</option>
+    </select>
+
+    <button onclick="criarCooperativa()">Entrar</button>
+  </div>
+
+  <div id="jogo" style="display:none;">
+    <h2 id="titulo"></h2>
+    <p id="dinheiro"></p>
+
+    <button onclick="listarCooperativas()">Ver cooperativas</button>
+
+    <div id="lista"></div>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
