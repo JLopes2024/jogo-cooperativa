@@ -174,11 +174,74 @@ async function fundir(idOutro) {
   const novoNome = prompt("Nome da nova cooperativa:");
   if (!novoNome) return;
 
-  dinheiro += 500;
+  // pega dados da outra cooperativa
+  const docOutro = await db.collection("cooperativas").doc(idOutro).get();
+  const outra = docOutro.data();
+
+  let valorBase = 0;
+
+  // VALOR BASE POR TIPO (sua coop)
+  const valores = {
+    "Transporte": 400,
+    "Saúde": 600,
+    "Agropecuário": 500,
+    "Financeira": 700,
+    "Consumo": 450,
+    "Infraestrutura": 650,
+    "Trabalho e Serviços": 500
+  };
+
+  valorBase = valores[tipoJogador] || 400;
+
+  // 🎯 BÔNUS ou PENALIDADE dependendo da combinação
+  let bonus = 0;
+
+  if (tipoJogador === outra.tipo) {
+    bonus += 300; // mesma área → mais forte
+  }
+
+  // SINERGIAS (faz sentido na vida real)
+  if (
+    (tipoJogador === "Transporte" && outra.tipo === "Infraestrutura") ||
+    (tipoJogador === "Infraestrutura" && outra.tipo === "Transporte")
+  ) {
+    bonus += 250;
+  }
+
+  if (
+    (tipoJogador === "Saúde" && outra.tipo === "Financeira") ||
+    (tipoJogador === "Financeira" && outra.tipo === "Saúde")
+  ) {
+    bonus += 200;
+  }
+
+  if (
+    (tipoJogador === "Agropecuário" && outra.tipo === "Consumo") ||
+    (tipoJogador === "Consumo" && outra.tipo === "Agropecuário")
+  ) {
+    bonus += 200;
+  }
+
+  // CONFLITO (menos eficiente)
+  if (
+    (tipoJogador === "Financeira" && outra.tipo === "Agropecuário")
+  ) {
+    bonus -= 150;
+  }
+
+  const ganho = valorBase + bonus;
+
+  dinheiro += ganho;
 
   await db.collection("cooperativas").doc(jogadorId).update({
     nome: novoNome,
     dinheiro: dinheiro
+  });
+
+  // registra evento
+  db.collection("eventos").add({
+    texto: `🤝 ${nomeJogador} fundiu com ${outra.nome} (+${ganho})`,
+    tempo: Date.now()
   });
 
   atualizarTela();
