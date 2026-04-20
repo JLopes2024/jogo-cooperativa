@@ -14,4 +14,4 @@ import { getFirestore, collection, addDoc, getDocs, updateDoc, doc } from "https
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-export { db, collection, addDoc, getDocs, updateDoc, doc };
+export { db, collection, addDoc, getDocs, updateDoc, doc, getDoc };
