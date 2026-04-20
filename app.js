@@ -3,23 +3,77 @@ let nomeJogador = "";
 let tipoJogador = "";
 let dinheiro = 0;
 
-// Criar cooperativa
-async function criarCooperativa() {
-  nomeJogador = document.getElementById("nome").value;
-  tipoJogador = document.getElementById("tipo").value;
+/* =========================
+   🔐 REGISTRAR
+========================= */
+async function registrar() {
+  const email = document.getElementById("email").value;
+  const senha = document.getElementById("senha").value;
+  const nome = document.getElementById("nome").value;
+  const tipo = document.getElementById("tipo").value;
 
-  dinheiro = 1000;
+  try {
+    const userCred = await auth.createUserWithEmailAndPassword(email, senha);
+    const user = userCred.user;
 
-  const docRef = await db.collection("cooperativas").add({
-    nome: nomeJogador,
-    tipo: tipoJogador,
-    dinheiro: dinheiro,
-    online: true,
-    criadoEm: Date.now()
-  });
+    jogadorId = user.uid;
+    nomeJogador = nome;
+    tipoJogador = tipo;
+    dinheiro = 1000;
 
-  jogadorId = docRef.id;
+    await db.collection("cooperativas").doc(jogadorId).set({
+      nome,
+      tipo,
+      dinheiro,
+      online: true,
+      criadoEm: Date.now()
+    });
 
+    entrarNoJogo();
+
+  } catch (e) {
+    alert("Erro: " + e.message);
+  }
+}
+
+/* =========================
+   🔓 LOGIN
+========================= */
+async function login() {
+  const email = document.getElementById("email").value;
+  const senha = document.getElementById("senha").value;
+
+  try {
+    const userCred = await auth.signInWithEmailAndPassword(email, senha);
+    const user = userCred.user;
+
+    jogadorId = user.uid;
+
+    const doc = await db.collection("cooperativas")
+      .doc(jogadorId)
+      .get();
+
+    const data = doc.data();
+
+    nomeJogador = data.nome;
+    tipoJogador = data.tipo;
+    dinheiro = data.dinheiro;
+
+    await db.collection("cooperativas").doc(jogadorId).update({
+      online: true
+    });
+
+    entrarNoJogo();
+
+  } catch (e) {
+    alert("Erro: " + e.message);
+  }
+}
+
+/* =========================
+   🚪 ENTRAR NO JOGO
+========================= */
+function entrarNoJogo() {
   document.getElementById("login").style.display = "none";
   document.getElementById("jogo").style.display = "block";
 
@@ -28,13 +82,15 @@ async function criarCooperativa() {
   escutarCooperativas();
   escutarOnline();
   escutarRanking();
+  escutarEventos();
 
   notificarEntrada(nomeJogador);
-
   iniciarEventos();
 }
 
-// Atualizar tela
+/* =========================
+   🔄 ATUALIZAR TELA
+========================= */
 function atualizarTela() {
   document.getElementById("titulo").innerText =
     nomeJogador + " (" + tipoJogador + ")";
@@ -42,7 +98,9 @@ function atualizarTela() {
     "💰 R$ " + dinheiro;
 }
 
-// TEMPO REAL - COOPERATIVAS
+/* =========================
+   🔴 TEMPO REAL
+========================= */
 function escutarCooperativas() {
   db.collection("cooperativas").onSnapshot((snapshot) => {
 
@@ -68,7 +126,9 @@ function escutarCooperativas() {
   });
 }
 
-// ONLINE
+/* =========================
+   🟢 ONLINE
+========================= */
 function escutarOnline() {
   db.collection("cooperativas").onSnapshot((snapshot) => {
 
@@ -86,7 +146,9 @@ function escutarOnline() {
   });
 }
 
-// RANKING
+/* =========================
+   🏆 RANKING
+========================= */
 function escutarRanking() {
   db.collection("cooperativas")
     .orderBy("dinheiro", "desc")
@@ -97,7 +159,6 @@ function escutarRanking() {
 
       snapshot.forEach((doc) => {
         const coop = doc.data();
-
         html += `<div>#${pos} - ${coop.nome} 💰 ${coop.dinheiro}</div>`;
         pos++;
       });
@@ -106,7 +167,9 @@ function escutarRanking() {
     });
 }
 
-// FUSÃO
+/* =========================
+   🤝 FUSÃO
+========================= */
 async function fundir(idOutro) {
   const novoNome = prompt("Nome da nova cooperativa:");
   if (!novoNome) return;
@@ -121,7 +184,9 @@ async function fundir(idOutro) {
   atualizarTela();
 }
 
-// NOTIFICAÇÃO
+/* =========================
+   🔔 NOTIFICAÇÃO
+========================= */
 function notificarEntrada(nome) {
   const msg = `🚀 ${nome} entrou no jogo!`;
 
@@ -131,7 +196,9 @@ function notificarEntrada(nome) {
   });
 }
 
-// ESCUTAR EVENTOS
+/* =========================
+   📢 EVENTOS
+========================= */
 function escutarEventos() {
   db.collection("eventos")
     .orderBy("tempo", "desc")
@@ -148,10 +215,10 @@ function escutarEventos() {
     });
 }
 
-// EVENTOS ALEATÓRIOS
+/* =========================
+   🎲 EVENTOS ALEATÓRIOS
+========================= */
 function iniciarEventos() {
-  escutarEventos();
-
   setInterval(async () => {
 
     const eventos = [
@@ -177,3 +244,14 @@ function iniciarEventos() {
 
   }, 10000);
 }
+
+/* =========================
+   🚨 FICAR OFFLINE AO SAIR
+========================= */
+window.addEventListener("beforeunload", async () => {
+  if (jogadorId) {
+    await db.collection("cooperativas").doc(jogadorId).update({
+      online: false
+    });
+  }
+});
